@@ -1,66 +1,69 @@
 //
-//  HomeVC.swift
+//  SearchProductVC.swift
 //  Product
 //
-//  Created by Thant Sin Htun on 29/05/2024.
+//  Created by Thant Sin Htun on 01/06/2024.
 //
 
 import UIKit
 
-class HomeVC: UIViewController,StoryBoarded  {
+class SearchProductVC: UIViewController,StoryBoarded {
     
     static var storyboardName: StoryBoardHelper = .Home
-    lazy var vm: HomeVM = HomeVM(delegate: self)
+    lazy var vm: SearchProductVM = SearchProductVM(delegate: self)
+
+    
 
     @IBOutlet weak var loadingView: UIActivityIndicatorView!
-    @IBOutlet weak var btnSearch: UIButton!
+    @IBOutlet weak var emptyView: UIView!
+    @IBOutlet weak var txtSearch: UITextField!
+    @IBOutlet weak var btnBack: UIButton!
     @IBOutlet weak var cvProductList: UICollectionView!
-    
-    
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        tabBarItem = UITabBarItem(title: nil, image: UIImage(resource: .home), tag: 3)
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViews()
         initBindings()
-        vm.fetchProductList()
-    }
-    private func setupViews() {
         
+    }
+    private func setupViews(){
         cvProductList.register(.init(nibName: "ProductCell", bundle: nil), forCellWithReuseIdentifier: "ProductCell")
         cvProductList.delegate = self
         cvProductList.dataSource = self
         cvProductList.contentInset = .init(top: 0, left: 16, bottom: 0, right: 16)
-        loadingView.transform = CGAffineTransform.init(scaleX: 2, y: 2)
-
-        btnSearch.addTarget(self, action: #selector(onTapSearch), for: .touchUpInside)
-    }
-    private func initBindings() {
+        btnBack.addTarget(self, action: #selector(onTapBack), for: .touchUpInside)
         
+        loadingView.transform = CGAffineTransform.init(scaleX: 2, y: 2)
+        txtSearch.becomeFirstResponder()
+        txtSearch.delegate = self
+    }
+    private func initBindings(){
+    }
+    @objc private func onTapBack(){
+        self.navigationController?.popViewController(animated: true)
     }
     
-    @objc private func onTapSearch(){
-        let vc = SearchProductVC.ininstantiate()
-        navigationController?.pushViewController(vc, animated: true)
-    }
+    
     private func showLoading(){
         loadingView.isHidden = false
         cvProductList.isHidden = true
+        emptyView.isHidden = true
     }
-    private func hideLoading(){
+    
+    private func showData(){
         loadingView.isHidden = true
         cvProductList.isHidden = false
+        emptyView.isHidden = true
     }
+    private func showError(){
+        loadingView.isHidden = true
+        cvProductList.isHidden = true
+        emptyView.isHidden = false
+    }
+    
+
 }
 
-extension HomeVC : UICollectionViewDataSource {
+extension SearchProductVC : UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return vm.productList.count
     }
@@ -71,7 +74,7 @@ extension HomeVC : UICollectionViewDataSource {
         return cell
     }
 }
-extension HomeVC : UICollectionViewDelegate {
+extension SearchProductVC : UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let vc = ProductDetailVC.ininstantiate()
         vc.productId = vm.productList[indexPath.row].id
@@ -80,7 +83,7 @@ extension HomeVC : UICollectionViewDelegate {
     }
 }
 
-extension HomeVC : UICollectionViewDelegateFlowLayout {
+extension SearchProductVC : UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         return 8
     }
@@ -95,22 +98,34 @@ extension HomeVC : UICollectionViewDelegateFlowLayout {
     }
 }
 
-extension HomeVC : HomeViewDelegate {
+extension SearchProductVC : UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if let query = txtSearch.text {
+            vm.searchProductList(with: query )
+        }
+        view.endEditing(true)
+        return true
+    }
+}
+
+extension SearchProductVC : SearchProductViewDelegate {
     func onGetProductList() {
-        hideLoading()
+        
+        showData()
         DispatchQueue.main.async {
             self.cvProductList.reloadData()
         }
+        
     }
     
-    func loading() {
+    func onLoading() {
         showLoading()
     }
     
     func onGetError(message: String) {
-        print(message)
-        hideLoading()
+        showError()
     }
     
     
 }
+

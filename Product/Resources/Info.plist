@@ -21,5 +21,8 @@
 			</array>
 		</dict>
 	</dict>
+    <key>BASE_URL</key>
+    <string>https://dummyjson.com</string>
+    
 </dict>
 </plist>
